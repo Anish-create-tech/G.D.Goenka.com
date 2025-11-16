@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Volunteer & Donate — Save the River</title>
+  <style>
+    :root{--accent:#0b6b5a;--muted:#6b7280;--bg:#e8f7f4;--card:#ffffff;--radius:20px}
+    *{box-sizing:border-box}
+    body{font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial;margin:0;background:linear-gradient(120deg,#dff7f7,#e8f7f4,#f3faef);color:#0f172a}
+    .container{max-width:1200px;margin:60px auto;padding:24px}
+
+    h1,h2{font-weight:700;text-align:center;color:#0b3d33}
+
+    /* CARD STYLE — like sample image */
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:0 8px 20px rgba(0,0,0,0.06);padding:28px;margin-bottom:24px;transition:.3s}
+    .card:hover{transform:translateY(-4px);box-shadow:0 12px 28px rgba(0,0,0,0.08)}
+
+    /* GRID LIKE PRICING SECTION */
+    .grid{display:grid;grid-template-columns:2fr 1fr;gap:24px;margin-top:30px}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}}
+
+    /* INPUTS */
+    label{display:block;font-weight:600;margin-bottom:6px;font-size:14px}
+    input,textarea,select{width:100%;padding:12px 14px;border:1px solid #d6e4dd;border-radius:12px;font-size:14px;background:#f8fffc}
+    textarea{min-height:120px}
+
+    .row{display:flex;gap:12px}
+    .row>*{flex:1}
+
+    .btn{padding:12px 20px;border:none;border-radius:12px;background:#0b6b5a;color:white;font-weight:700;cursor:pointer;transition:.3s}
+    .btn:hover{opacity:.85}
+    .btn.ghost{background:transparent;color:#0b6b5a;border:2px solid #0b6b5a20}
+
+    .volunteer-item{padding:12px;border-radius:12px;background:#f0fffa;border:1px solid #0b6b5a30;margin-bottom:10px}
+
+    /* DONATION BOX — CARD STYLE LIKE IMAGE */
+    .donation-box{position:sticky;top:20px}
+    .chip{padding:10px 14px;border-radius:12px;border:1px solid #cfe7df;cursor:pointer;transition:.3s}
+    .chip.selected{background:#0b6b5a15;border-color:#0b6b5a}
+    .amounts{display:flex;gap:10px;margin:10px 0}
+
+    .success,.error{border-radius:12px;padding:12px;margin-top:12px;font-size:14px}
+    .success{background:#ecfdf5;border-left:4px solid #10b981}
+    .error{background:#fff1f2;border-left:4px solid #ef4444}
+
+    footer{text-align:center;font-size:13px;color:var(--muted);margin-top:30px}
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>Volunteer — Donate</h1>
+      <p class="lead">Become part of our volunteer community. Help with clean-ups, awareness drives, monitoring, and more. Fill the form below and our coordinator will contact you.</p>
+      <div class="grid">
+        <div>
+          <form id="volunteerForm" action="https://formspree.io/f/mrbykddr" method="POST">
+            <div class="row">
+              <div>
+                <label for="vname">Full name</label>
+                <input id="vname" name="name" type="text" placeholder="e.g. Priya Sharma" required />
+              </div>
+              <div>
+                <label for="vphone">Phone</label>
+                <input id="vphone" name="phone" type="tel" placeholder="+91 98765 43210" required />
+              </div>
+            </div>
+
+            <label for="vemail">Email</label>
+            <input id="vemail" name="email" type="email" placeholder="you@example.com" required />
+
+            <label for="vcity">City / Locality</label>
+            <input id="vcity" name="city" type="text" placeholder="e.g. Wazirabad, Delhi" />
+
+            <label for="vroles">I can help with</label>
+            <select id="vroles" name="roles" multiple aria-label="Volunteer roles">
+              <option>River clean-up</option>
+              <option>Awareness & Education</option>
+              <option>Monitoring & Sampling</option>
+              <option>Logistics & Events</option>
+              <option>Fundraising</option>
+            </select>
+
+            <label for="vnotes">Anything you'd like us to know</label>
+            <textarea id="vnotes" name="notes" placeholder="Tell us about your availability, skills, or past experience"></textarea>
+
+            <div style="margin-top:12px;display:flex;gap:10px;align-items:center">
+              <button type="submit" class="btn"> Volunteer</button>
+              <button type="button" id="clearVolunteer" class="btn ghost">Clear</button>
+            </div>
+
+            <div id="volMessage" aria-live="polite"></div>
+          </form>
+
+          <!-- Recent volunteer section removed per request -->
+        </div>
+
+        <aside class="donation-box">
+          <div class="card">
+            <h2 style="margin:0 0 6px">Donate to the Cause</h2>
+            <p class="muted">Your donation helps fund cleanup drives, water testing kits, and community programs.</p>
+
+            <div style="margin-top:12px">
+              <label for="donorName">Name</label>
+              <input id="donorName" type="text" placeholder="Your name" />
+
+              <label for="donorEmail" style="margin-top:8px">Email</label>
+              <input id="donorEmail" type="email" placeholder="you@example.com" />
+
+              <label for="donationNote" style="margin-top:8px">Note (optional)</label>
+              <input id="donationNote" type="text" placeholder="In memory of... or for a program..." />
+
+              <!-- Pay online link (opens Stripe checkout in a new tab) -->
+              <div style="margin-top:12px">
+                <a class="btn" href="https://buy.stripe.com/test_5kQ6oB5tRcQa6vSdKpdby03" target="_blank" rel="noopener noreferrer">Donate Now</a>
+              </div>
+
+              <div id="donationMessage"></div>
+
+              <div class="muted small" style="margin-top:12px">Secure payments: We use trusted payment gateways. (This demo simulates donation — integrate your gateway for live payments.)</div>
+            </div>
+          </div>
+
+          <div class="card small">
+            <strong>Why donate?</strong>
+            <ul style="margin:8px 0 0;padding-left:18px;color:var(--muted)">
+              <li>Buy water testing kits and lab supplies</li>
+              <li>Fund volunteer safety equipment</li>
+              <li>Support education & community outreach</li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <footer>
+      © <span id="year"></span> Save the River — Together we restore, protect, and celebrate the river.
+    </footer>
+  </div>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Volunteer form handling (client-side demo)
+    const volunteerForm = document.getElementById('volunteerForm');
+    const recentBox = document.getElementById('recentVolunteers');
+    const volMessage = document.getElementById('volMessage');
+
+    /* Formspree handles submission — JS disabled */
+      fetch('/api/volunteer', {method:'POST', body: JSON.stringify(Object.fromEntries(data)), headers:{'Content-Type':'application/json'}})
+        .then(r=>r.json()).then(res=>{...})
+      */
+    });
+
+    document.getElementById('clearVolunteer').addEventListener('click', ()=>{volunteerForm.reset(); document.getElementById('volMessage').innerHTML='';});
+
+    // Donation UI (client-side demo)
+    const donationAmount = document.getElementById('donationAmount');
+    const donateBtn = document.getElementById('donateBtn');
+    const donationMessage = document.getElementById('donationMessage');
+
+    donateBtn.addEventListener('click', ()=>{
+      const name = document.getElementById('donorName').value.trim();
+      const email = document.getElementById('donorEmail').value.trim();
+      const amount = Number(donationAmount.value);
+      if(!amount || amount <= 0){
+        donationMessage.innerHTML = '<div class="error">Please enter a valid amount.</div>';
+        return;
+      }
+
+      // Demo: simulate payment flow
+      simulateDonation({name, email, amount}).then(txn=>{
+        donationMessage.innerHTML = `<div class="success">Thank you — donation of \u20B9${txn.amount} received. Transaction id: ${txn.id}</div>`;
+        // TODO: store donation record on server
+      }).catch(err=>{
+        donationMessage.innerHTML = '<div class="error">Payment failed. Please try again.</div>';
+      });
+    });
+
+    document.getElementById('donateOffline').addEventListener('click', ()=>{
+      donationMessage.innerHTML = '<div class="success">Thank you — please visit our office or transfer to the bank account mentioned on the Contact page.</div>';
+    });
+
+    // Simple simulated payment (replace with real gateway integration)
+    function simulateDonation({name, email, amount}){
+      return new Promise((resolve,reject)=>{
+        setTimeout(()=>{
+          // 95% success simulation
+          if(Math.random() < 0.95){
+            resolve({id:'TXN'+Date.now(), name, email, amount});
+          } else reject(new Error('network'));
+        }, 900);
+      });
+    }
+
+    // tiny helper to avoid XSS in demo
+    function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  </script>
+</body>
+</html>

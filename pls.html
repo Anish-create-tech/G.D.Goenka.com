@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Bioreactor Digital Twin (SVG)</title>
+<style>
+  :root{
+    --bg:#0f1724; --card:#0b2540; --accent:#18a0fb; --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444;
+    --glass: rgba(255,255,255,0.04);
+    font-family: Inter, system-ui, Arial, sans-serif;
+  }
+  body{ margin:0; background:linear-gradient(180deg,#071029 0%, #071a2f 60%); color:#e6f0fb; display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px; }
+  .twin-wrap{ width:100%; max-width:1100px; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:14px; padding:18px; box-shadow: 0 10px 30px rgba(2,6,23,0.6); display:grid; grid-template-columns: 1fr 320px; gap:16px; align-items:start; }
+  h2{ margin:0 0 10px 0; font-weight:700; color:var(--accent); }
+  /* Left: SVG area */
+  .svg-card{ background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:10px; padding:12px; }
+  svg { width:100%; height:520px; display:block; }
+
+  /* Right: Controls */
+  .controls { padding:16px; border-radius:10px; background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.02); }
+  .stat { display:flex; justify-content:space-between; padding:10px 8px; border-radius:8px; margin-bottom:10px; background:var(--glass); }
+  .stat strong{ color:#fff; }
+  .btn{ display:inline-block; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:700; color:#042031; background:var(--accent); margin-right:8px; border:none; }
+  .small{ font-size:13px; color:#bcd7f2; }
+
+  /* Valve style */
+  .valve { cursor:pointer; transition: transform .12s ease; }
+  .valve:hover { transform: scale(1.06); }
+
+  /* flow dash animation */
+  .flow-line { stroke-dasharray: 12 12; stroke-width:6; stroke-linecap:round; animation: flowAnim 1.2s linear infinite; }
+  @keyframes flowAnim { to { stroke-dashoffset: -24; } }
+
+  /* particle (nitrate) animation group */
+  .particle { opacity:0.85; animation: rise 2.2s linear infinite; }
+  @keyframes rise { 0%{ transform: translateY(0) scale(0.8); opacity:1 } 100%{ transform: translateY(-80px) scale(0.4); opacity:0 } }
+
+  /* blinking sensors */
+  .sensor { transform-origin:center; }
+  .blink-on { animation: blinkGreen 1.2s infinite; }
+  .blink-off { animation: blinkRed 1.2s infinite; }
+  @keyframes blinkGreen { 0%{ opacity:1; filter:drop-shadow(0 0 6px rgba(34,197,94,0.9)) } 50%{ opacity:0.35 } 100%{ opacity:1 } }
+  @keyframes blinkRed { 0%{ opacity:1; filter:drop-shadow(0 0 8px rgba(239,68,68,0.95)) } 50%{ opacity:0.35 } 100%{ opacity:1 } }
+
+  /* gauge */
+  .gauge { width:100%; height:120px; margin-bottom:12px; }
+  .gauge-bar { height:18px; background: rgba(255,255,255,0.06); border-radius:10px; overflow:hidden; }
+  .gauge-fill { height:100%; width:0%; background: linear-gradient(90deg, #34d399, #06b6d4); transition: width 800ms ease; }
+
+  /* legend */
+  .legend { display:flex; gap:8px; margin-top:8px; font-size:13px; color:#bcd7f2; }
+  .dot { width:12px; height:12px; border-radius:50%; display:inline-block; margin-right:6px; }
+  .dot.ok{ background:var(--ok); } .dot.warn{ background:var(--warn); } .dot.bad{ background:var(--bad); }
+
+  /* small footnote */
+  .note { margin-top:12px; font-size:13px; color:#8fb7df; }
+</style>
+</head>
+<body>
+
+<div class="twin-wrap" role="application" aria-label="Bioreactor digital twin">
+  <div class="svg-card" aria-hidden="false">
+    <h2>Bioreactor Digital Twin</h2>
+    <!-- SVG layout: two tanks, inlet pipe, bioreactor bed, outlet pipe, valve icons, sensors -->
+    <svg id="twinSVG" viewBox="0 0 1200 640" role="img" aria-label="Bioreactor schematic">
+      <!-- Background subtle grid -->
+      <defs>
+        <linearGradient id="waterGrad" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="#7ad3ff" stop-opacity="0.95" />
+          <stop offset="100%" stop-color="#1aa0d6" stop-opacity="0.9" />
+        </linearGradient>
+
+        <filter id="softShadow" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="6" stdDeviation="12" flood-color="#00142b" flood-opacity="0.45"/>
+        </filter>
+      </defs>
+
+      <!-- INLET tank -->
+      <g transform="translate(60,80)">
+        <rect x="0" y="40" width="220" height="240" rx="18" ry="18" fill="url(#waterGrad)" stroke="#063547" stroke-width="4" />
+        <text x="110" y="30" fill="#cfefff" font-size="18" font-weight="700" text-anchor="middle">Inlet Tank</text>
+        <text x="110" y="300" fill="#dff6ff" font-size="13" text-anchor="middle" id="inletVol">Inflow: 1200 L/h</text>
+        <!-- sensor on inlet -->
+        <g id="sensor-inlet" class="sensor blink-on" transform="translate(210,30)">
+          <circle r="12" fill="#042a21" stroke="#063" stroke-width="2"></circle>
+          <circle r="7" fill="#22c55e"></circle>
+        </g>
+      </g>
+
+      <!-- Pipe to bioreactor -->
+      <g transform="translate(280,170)">
+        <path d="M0 0 H160" stroke="#0ea5d8" stroke-width="16" stroke-linecap="round" class="flow-line" />
+        <!-- valve 1 -->
+        <g id="valve-1" class="valve" transform="translate(80,-18)" aria-label="Valve 1" role="button" tabindex="0">
+          <circle r="18" fill="#08324a" stroke="#0ea5d8" stroke-width="3"></circle>
+          <rect x="-3" y="-8" width="6" height="16" fill="#bfeeff" transform="rotate(0)"></rect>
+        </g>
+      </g>
+
+      <!-- Bioreactor bed (long rectangle) -->
+      <g transform="translate(480,120)">
+        <rect x="0" y="0" width="420" height="280" rx="20" ry="20" fill="#062635" stroke="#0a5e6f" stroke-width="3" filter="url(#softShadow)"/>
+        <text x="210" y="-10" fill="#bff0ff" font-size="18" font-weight="700" text-anchor="middle">Denitrification Bioreactor</text>
+
+        <!-- animated particles representing nitrate being removed (left to right) -->
+        <g id="particles">
+          <!-- multiple particles, JS will animate their visibility/positions -->
+          <circle class="particle" cx="80" cy="220" r="8" fill="#ffd166" opacity="0.9"></circle>
+          <circle class="particle" cx="160" cy="200" r="6" fill="#ffd166"></circle>
+          <circle class="particle" cx="240" cy="230" r="7" fill="#ffd166"></circle>
+          <circle class="particle" cx="320" cy="210" r="6" fill="#ffd166"></circle>
+          <circle class="particle" cx="200" cy="160" r="5" fill="#ffd166"></circle>
+        </g>
+
+        <!-- bed layers -->
+        <g transform="translate(20,24)">
+          <rect width="380" height="48" rx="8" fill="#0c3944"></rect>
+          <rect y="60" width="380" height="48" rx="8" fill="#0e4a50"></rect>
+          <rect y="120" width="380" height="48" rx="8" fill="#0b5b5f"></rect>
+          <rect y="180" width="380" height="48" rx="8" fill="#0d6b69"></rect>
+        </g>
+
+        <!-- sensor icons on bioreactor -->
+        <g id="sensor-bed" class="sensor blink-on" transform="translate(420,40)">
+          <rect x="-14" y="-14" width="28" height="28" rx="6" ry="6" fill="#03282a" stroke="#07b6d9" stroke-width="2"></rect>
+          <circle r="6" cx="0" cy="0" fill="#22c55e"></circle>
+        </g>
+
+        <!-- valve 2 on outlet -->
+        <g id="valve-2" class="valve" transform="translate(440,120)">
+          <circle r="18" fill="#08324a" stroke="#0ea5d8" stroke-width="3"></circle>
+          <rect x="-3" y="-8" width="6" height="16" fill="#bfeeff"></rect>
+        </g>
+      </g>
+
+      <!-- Outlet pipe -->
+      <g transform="translate(920,260)">
+        <path d="M0 0 H160" stroke="#0ea5d8" stroke-width="16" stroke-linecap="round" class="flow-line" />
+        <!-- sensor on outlet -->
+        <g id="sensor-outlet" class="sensor blink-on" transform="translate(150,-30)">
+          <circle r="12" fill="#042a21" stroke="#063" stroke-width="2"></circle>
+          <circle r="7" fill="#22c55e"></circle>
+        </g>
+      </g>
+
+      <!-- Outlet tank -->
+      <g transform="translate(1100,150)">
+        <rect x="-40" y="40" width="220" height="240" rx="18" ry="18" fill="url(#waterGrad)" stroke="#063547" stroke-width="4" />
+        <text x="70" y="30" fill="#cfefff" font-size="18" font-weight="700">Outlet Tank</text>
+        <text x="70" y="300" fill="#dff6ff" font-size="13" text-anchor="middle" id="outletVol">Outflow: 1100 L/h</text>
+      </g>
+
+      <!-- NITRATE DISPLAY (gauge) -->
+      <g transform="translate(720,20)">
+        <rect x="-260" y="-12" width="520" height="52" rx="10" fill="rgba(255,255,255,0.02)"></rect>
+        <text x="0" y="24" text-anchor="middle" fill="#bfe8ff" font-size="16" font-weight="700">Nitrate Removal Efficiency</text>
+      </g>
+
+      <!-- small labels for accessibility -->
+      <text x="600" y="610" fill="#9fcff6" font-size="12" text-anchor="middle">Click valve circles to toggle OPEN / CLOSE • Sensors blink green when online</text>
+    </svg>
+  </div>
+
+  <!-- Right column: controls & live stats -->
+  <div class="controls" role="region" aria-label="Bioreactor controls">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <div>
+        <div class="small">Plant</div>
+        <div style="font-weight:800; font-size:18px; color:#e8fbff;">Okhla Bioreactor — Pilot</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="small">Status</div>
+        <div id="plantStatus" style="font-weight:800; color:var(--warn);">Monitoring</div>
+      </div>
+    </div>
+
+    <div class="stat">
+      <div><small>Inflow</small><div id="statInflow"><strong>1200</strong> L/h</div></div>
+      <div><small>Outflow</small><div id="statOutflow"><strong>1180</strong> L/h</div></div>
+    </div>
+
+    <div class="stat" aria-live="polite">
+      <div><small>Nitrate Removal</small><div id="nitratePct"><strong>78%</strong></div></div>
+      <div><small>Valve State</small><div id="valveState"><strong>OPEN / OPEN</strong></div></div>
+    </div>
+
+    <div style="margin-top:8px;">
+      <div class="small" style="margin-bottom:6px;">Nitrate Efficiency</div>
+      <div class="gauge">
+        <div class="gauge-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="78">
+          <div id="gaugeFill" class="gauge-fill" style="width:78%"></div>
+        </div>
+      </div>
+      <div class="legend">
+        <div><span class="dot ok"></span>Good</div>
+        <div><span class="dot warn"></span>Moderate</div>
+        <div><span class="dot bad"></span>Critical</div>
+      </div>
+    </div>
+
+    <div style="margin-top:10px;">
+      <div class="small">Sensors</div>
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <div style="flex:1; background:var(--glass); padding:8px; border-radius:8px; text-align:center;">
+          <div style="font-weight:700">Inlet</div>
+          <div id="sensorIn" style="color:var(--ok)">Online</div>
+        </div>
+        <div style="flex:1; background:var(--glass); padding:8px; border-radius:8px; text-align:center;">
+          <div style="font-weight:700">Bed</div>
+          <div id="sensorBed" style="color:var(--ok)">Online</div>
+        </div>
+        <div style="flex:1; background:var(--glass); padding:8px; border-radius:8px; text-align:center;">
+          <div style="font-weight:700">Outlet</div>
+          <div id="sensorOut" style="color:var(--ok)">Online</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <div class="small">Controls</div>
+      <div style="margin-top:8px;">
+        <button class="btn" id="toggleValve1">Toggle Valve 1</button>
+        <button class="btn" id="toggleValve2">Toggle Valve 2</button>
+        <button class="btn" id="resetBtn" style="background:#f97316">Reset</button>
+      </div>
+    </div>
+
+    <div class="note">This twin simulates flow and nitrate removal. Connect <code>updateTwin(data)</code> to live APIs to push real sensor values.</div>
+  </div>
+</div>
+
+<script>
+/* -------------------------------
+  Bioreactor Digital Twin Simulation
+   - Valve toggles control flows and nitrate removal
+   - Sensors randomly go offline/online
+   - Particles indicate nitrate presence and are reduced as efficiency increases
+---------------------------------*/
+
+(function(){
+  // State
+  const state = {
+    valve1Open: true,
+    valve2Open: true,
+    inflow: 1200, // L/h
+    outflow: 1180,
+    nitratePct: 78, // removal %
+    sensors: { in: true, bed: true, out: true }
+  };
+
+  // DOM refs
+  const svg = document.getElementById('twinSVG');
+  const valve1 = document.getElementById('valve-1');
+  const valve2 = document.getElementById('valve-2');
+  const particlesGroup = document.getElementById('particles');
+  const sensorIn = document.getElementById('sensor-inlet');
+  const sensorBed = document.getElementById('sensor-bed');
+  const sensorOut = document.getElementById('sensor-outlet');
+
+  const statInflow = document.getElementById('statInflow');
+  const statOutflow = document.getElementById('statOutflow');
+  const nitratePctEl = document.getElementById('nitratePct');
+  const gaugeFill = document.getElementById('gaugeFill');
+  const valveStateEl = document.getElementById('valveState');
+  const inletVol = document.getElementById('inletVol');
+  const outletVol = document.getElementById('outletVol');
+  const sensorInText = document.getElementById('sensorIn');
+  const sensorBedText = document.getElementById('sensorBed');
+  const sensorOutText = document.getElementById('sensorOut');
+
+  // helper to set sensor visuals
+  function setSensorVisual(elGroup, isOn){
+    if (isOn){
+      elGroup.classList.remove('blink-off'); elGroup.classList.add('blink-on');
+    } else {
+      elGroup.classList.remove('blink-on'); elGroup.classList.add('blink-off');
+    }
+  }
+
+  // initialize
+  setSensorVisual(sensorIn, state.sensors.in);
+  setSensorVisual(sensorBed, state.sensors.bed);
+  setSensorVisual(sensorOut, state.sensors.out);
+
+  // handle valve clicks (toggle)
+  function updateValveVisual(el, isOpen){
+    const rect = el.querySelector('rect');
+    if (!rect) return;
+    // rotate handle to indicate open/closed
+    if (isOpen) rect.setAttribute('transform','rotate(0)');
+    else rect.setAttribute('transform','rotate(90)');
+    // color valve
+    const circle = el.querySelector('circle');
+    circle.setAttribute('fill', isOpen ? '#10404f' : '#2b1720');
+    circle.setAttribute('stroke', isOpen ? '#0ea5d8' : '#7f1d1d');
+  }
+
+  updateValveVisual(valve1, state.valve1Open);
+  updateValveVisual(valve2, state.valve2Open);
+
+  // click handlers
+  document.getElementById('toggleValve1').addEventListener('click', ()=> {
+    state.valve1Open = !state.valve1Open; updateValveVisual(valve1, state.valve1Open); syncState();
+  });
+  document.getElementById('toggleValve2').addEventListener('click', ()=> {
+    state.valve2Open = !state.valve2Open; updateValveVisual(valve2, state.valve2Open); syncState();
+  });
+  valve1.addEventListener('click', ()=> { state.valve1Open = !state.valve1Open; updateValveVisual(valve1, state.valve1Open); syncState(); });
+  valve2.addEventListener('click', ()=> { state.valve2Open = !state.valve2Open; updateValveVisual(valve2, state.valve2Open); syncState(); });
+
+  document.getElementById('resetBtn').addEventListener('click', ()=> {
+    state.valve1Open = true; state.valve2Open = true; state.inflow = 1200; state.outflow = 1180; state.nitratePct = 78;
+    state.sensors.in = true; state.sensors.bed = true; state.sensors.out = true;
+    updateValveVisual(valve1,true); updateValveVisual(valve2,true); syncState();
+  });
+
+  // function to simulate flows and nitrate change per tick
+  function tickSimulation(){
+    // adjust inflow/outflow based on valve states
+    const baseIn = 1200;
+    const flowFactor = (state.valve1Open ? 1 : 0.18) * (state.valve2Open ? 1 : 0.9); // if closed reduce flow
+    // random jitter
+    const jitter = (Math.random()*40 - 20);
+    state.inflow = Math.max(200, Math.round(baseIn * (0.9 + 0.2 * flowFactor) + jitter));
+    state.outflow = Math.max(160, Math.round(state.inflow * (0.95 + (Math.random()*0.04 - 0.02))));
+
+    // nitrate change: if both valves open -> efficiency improves slowly; if closed -> efficiency declines
+    const eff = state.nitratePct;
+    let delta = 0;
+    if (state.valve1Open && state.valve2Open){
+      delta = - (0.2 + Math.random()*0.6); // reduction per tick
+    } else if (!state.valve1Open && !state.valve2Open){
+      delta = +(0.6 + Math.random()*1.2);
+    } else {
+      delta = +(0.05 - Math.random()*0.2);
+    }
+    state.nitratePct = Math.max(10, Math.min(98, +(state.nitratePct + delta).toFixed(2)));
+
+    // sensors randomly fail occasionally
+    if (Math.random() < 0.03) state.sensors.in = !state.sensors.in;
+    if (Math.random() < 0.02) state.sensors.bed = !state.sensors.bed;
+    if (Math.random() < 0.025) state.sensors.out = !state.sensors.out;
+
+    syncState();
+  }
+
+  // update DOM/UI visuals from state
+  function syncState(){
+    statInflow.innerHTML = `<strong>${state.inflow}</strong> L/h`;
+    statOutflow.innerHTML = `<strong>${state.outflow}</strong> L/h`;
+    nitratePctEl.innerHTML = `<strong>${Math.round(state.nitratePct)}%</strong>`;
+    gaugeFill.style.width = `${Math.round(state.nitratePct)}%`;
+    document.getElementById('inletVol').innerText = `Inflow: ${state.inflow} L/h`;
+    document.getElementById('outletVol').innerText = `Outflow: ${state.outflow} L/h`;
+    valveStateEl.innerText = `${state.valve1Open ? 'OPEN' : 'CLOSED'} / ${state.valve2Open ? 'OPEN' : 'CLOSED'}`;
+
+    setSensorVisual(sensorIn, state.sensors.in);
+    setSensorVisual(sensorBed, state.sensors.bed);
+    setSensorVisual(sensorOut, state.sensors.out);
+
+    sensorInText.innerText = state.sensors.in ? 'Online' : 'Offline';
+    sensorBedText.innerText = state.sensors.bed ? 'Online' : 'Offline';
+    sensorOutText.innerText = state.sensors.out ? 'Online' : 'Offline';
+
+    sensorInText.style.color = state.sensors.in ? 'var(--ok)' : 'var(--bad)';
+    sensorBedText.style.color = state.sensors.bed ? 'var(--ok)' : 'var(--bad)';
+    sensorOutText.style.color = state.sensors.out ? 'var(--ok)' : 'var(--bad)';
+
+    // animate particles intensity depending on nitratePct (more particles when nitrate high)
+    const particleEls = particlesGroup.querySelectorAll('.particle');
+    const intensity = Math.round((100 - state.nitratePct) / 25 * 5) + 1; // less particles as efficiency increases
+    particleEls.forEach((p, idx) => {
+      // set transform/animation-delay for variety
+      p.style.display = (idx < intensity) ? 'block' : 'none';
+      p.style.animationDelay = (idx * 0.18) + 's';
+    });
+
+    // flow animation speed change: speed up if valves open
+    const flows = svg.querySelectorAll('.flow-line');
+    flows.forEach(f => {
+      if (state.valve1Open && state.valve2Open) f.style.animationDuration = '0.9s';
+      else if (!state.valve1Open && !state.valve2Open) f.style.animationDuration = '2.4s';
+      else f.style.animationDuration = '1.6s';
+    });
+  }
+
+  // expose an API to update twin from external data
+  window.updateTwin = function(data){
+    // accept { valve1:boolean, valve2:boolean, inflow:number, outflow:number, nitratePct:number, sensors:{in,bed,out} }
+    if (!data) return;
+    if (typeof data.valve1 === 'boolean') state.valve1Open = data.valve1;
+    if (typeof data.valve2 === 'boolean') state.valve2Open = data.valve2;
+    if (typeof data.inflow === 'number') state.inflow = data.inflow;
+    if (typeof data.outflow === 'number') state.outflow = data.outflow;
+    if (typeof data.nitratePct === 'number') state.nitratePct = data.nitratePct;
+    if (data.sensors) Object.assign(state.sensors, data.sensors);
+    syncState();
+  };
+
+  // run simulation tick every ~2.5s
+  setInterval(tickSimulation, 2500);
+  syncState();
+
+})();
+</script>
+</body>
+</html>
